@@ -146,23 +146,14 @@ AfficherSudoku10:
     ---------------------------------------------------
 */
 
-/*
-    ALGO:
-        1) Lignes :
-            1.1) Verifier que le chiffre est entre 1 et 9
-            1.2) Vérifier les autres chiffres pour voir s'il y en a un autre identique. Aller de la manière suivante : 1->2, 1->3... 2->3, 7->8, 7->9, 8->9
-*/
-
 /* Valider le sudoku sur les 9 lignes */
 ValiderLignes00:
   set   vecteur, %l0        ! Pointeur sur la ligne courante
   mov   0, %l1              ! %l1 va servir pour savoir on est rendu sur quelle ligne
 
-  /* start Aff */
   set   validligne1, %o0
   call  printf
   nop
-  /* end Aff */
 
   ba    ValiderLignes02     ! Lancer la validation des lignes
   nop
@@ -170,7 +161,7 @@ ValiderLignes00:
 
 /* Validation de la ligne courante */
 ValiderLignes02:
-  set   validligne2, %o0        ! Afficher qu'on valider la ligne courante
+  set   validligne2, %o0        ! Afficher qu'on valide la ligne courante
   mov   %l1, %o1
   call  printf
   nop
@@ -230,14 +221,6 @@ ValiderLignes10:
   nop
  
   ldub  [%l0+%l3], %l5          ! Charger le chiffre a tester dans le registre l5
-  
-  !set   validation1, %o0        ! Debug INFOS
-  !mov   %l2, %o1
-  !mov   %l4, %o2
-  !mov   %l3, %o3
-  !mov   %l5, %o4
-  !call  printf
-  !nop
 
   cmp   %l4, %l5                ! Comparer le chiffre courant avec le chiffre a tester pour s'assurer qu'ils ne sont pas identique
   be    LigneInvalide
@@ -270,11 +253,9 @@ ValiderColonnes00:
   set   vecteur, %l0        ! Pointeur sur la colonnes courante
   mov   0, %l1              ! %l1 va servir pour savoir on est rendu sur quelle ligne
 
-  /* start Aff */
   set   validcolon1, %o0
   call  printf
   nop
-  /* end Aff */
 
 ValiderColonnes02:
   set   validcolon2, %o0        ! Afficher qu'on valider la colonne courante
@@ -295,7 +276,7 @@ ValiderColonnes04:
   add   %l0, %l1, %l0
 
   cmp   %l1, 9                    ! Si on a fait le tour du Sudoku, on passe au mode de validation suivant
-  be    VB00
+  be    ValiderBloc00
   nop
 
   ba    ValiderColonnes02
@@ -341,14 +322,6 @@ ValiderColonnes10:
  
   umul  %l3, 9, %l6
   ldub  [%l0+%l6], %l5          ! Charger le chiffre a tester dans le registre l5
-  
-  !set   validation1, %o0        ! Debug INFOS
-  !mov   %l2, %o1
-  !mov   %l4, %o2
-  !mov   %l3, %o3
-  !mov   %l5, %o4
-  !call  printf
-  !nop
 
   cmp   %l4, %l5                ! Comparer le chiffre courant avec le chiffre a tester pour s'assurer qu'ils ne sont pas identique
   be    LigneInvalide
@@ -367,58 +340,56 @@ ValiderColonnes10:
     Partie 5 : Validation par bloc
     ---------------------------------------------------
 */
-VB00:
+ValiderBloc00:
   set   validbloc1, %o0
   call  printf
   nop
 
   mov   0, %l0          ! Y
 
-VB02:
+ValiderBloc02:
   cmp   %l0, 3          ! Après avoir testé tous les blocs, on quitte le programme
   be    SudokuFin
   nop
  
   mov   0, %l1          ! X
-  ba    VB04            ! On valide les blocs sur la rangée l1
+  ba    ValiderBloc04            ! On valide les blocs sur la rangée l1
   nop
 
-VB03:
+ValiderBloc03:
   inc   %l0             ! On passe à la rangée de bloc suivante
-  ba    VB02
+  ba    ValiderBloc02
   nop
 
-VB04:
+ValiderBloc04:
   cmp   %l1, 3          ! Si on a testé les 3 blocs sur la rangée, on passe à la prochaine
-  be    VB03
+  be    ValiderBloc03
   nop
 
-  /* start AFF */
   set   validbloc2, %o0
   umul  %l0, 3, %o1
   add   %l1, %o1, %o1
   call  printf
   nop
-  /* end AFF */
 
   umul  %l1, 3,  %o0    ! Calculer l'indice du premier element du bloc dans le vecteur
   umul  %l0, 27, %o1
   add   %o0, %o1, %o2   ! Index calculé
   set   vecteur, %o3
-  call  VB10            ! Valider le bloc commençant a cet indice
+  call  ValiderBloc10            ! Valider le bloc commençant a cet indice
   nop
 
   inc   %l1             ! On passe au bloc suivant sur la même rangée
-  ba    VB04
+  ba    ValiderBloc04
   nop
 
-VB10:
+ValiderBloc10:
   save  %sp, -96, %sp   ! On concerve les registres. L'index du début va se trouver dans i2
   mov   0, %l0
   
-VB11:
+ValiderBloc11:
   cmp   %l0, 21
-  be    VB20            ! Restore
+  be    ValiderBloc20            ! Restore
   nop
 
   mov   %l0, %o0        ! Si le nombre est un multiple de 3, on change de ligne dans le Sudoku
@@ -427,28 +398,28 @@ VB11:
   nop
 
   cmp   %o0, 1          ! Puisque c'est un multiple de 3, on doit changer de ligne
-  be    VB13
+  be    ValiderBloc13
   nop
 
-  ba    VB14            ! Tester le reste du bloc avec le chiffre
+  ba    ValiderBloc14            ! Tester le reste du bloc avec le chiffre
   nop
 
-VB12:
+ValiderBloc12:
   inc   %l0             ! Tester le prochain nombre courant
-  ba    VB11
+  ba    ValiderBloc11
   nop
 
-VB13:
+ValiderBloc13:
   add   %l0, 6, %l0     ! Changer de ligne
 
-VB14:
+ValiderBloc14:
   add   %i2, %l0, %l5   ! Index du chiffre qu'on veut aller chercher
   ldub  [%i3+%l5], %l3  ! Charger le chiffre courant dans l3
   add   %l0, 1, %l1     ! Chiffre testeur
   
-VB15:
+ValiderBloc15:
   cmp   %l1, 21
-  be   VB12
+  be   ValiderBloc12
   nop
 
   mov   %l1, %o0        ! Si le nombre est un multiple de 3, on change de ligne dans le Sudoku
@@ -457,31 +428,21 @@ VB15:
   nop
 
   cmp   %o0, 1          ! Puisque c'est un multiple de 3, on doit changer de ligne
-  bne   VB17
+  bne   ValiderBloc17
   nop
 
-VB16:
+ValiderBloc16:
   add   %l1, 6, %l1     ! Changer de ligne
 
-VB17:
+ValiderBloc17:
   add   %i2, %l1, %l5   ! Index du chiffre qu'on veut aller chercher
   ldub  [%i3+%l5], %l4  ! Charger le chiffre a tester dans l4
-  
-  /* start AFF */
-  !set   validation1, %o0
-  !mov   %l0, %o1
-  !mov   %l3, %o2
-  !mov   %l1, %o3
-  !mov   %l4, %o4
-  !call  printf
-  !nop
-  /* end AFF */
 
   cmp   %l3, %l4        ! S'assurer que les 2 chiffres sont différents
-  bne   VB19
+  bne   ValiderBloc19
   nop
 
-VB18:
+ValiderBloc18:
   set   resinvalide, %o0    ! Afficher que le bloc n'est pas valide
   call  printf
   nop
@@ -489,12 +450,12 @@ VB18:
   ba    SudokuFin           ! Fin du programme
   nop
 
-VB19:
+ValiderBloc19:
   inc   %l1             ! Tester le nombre courant avec un autre chiffre dans le bloc
-  ba    VB15
+  ba    ValiderBloc15
   nop
 
-VB20:
+ValiderBloc20:
   set   resvalide, %o0
   call  printf
   nop
@@ -516,22 +477,6 @@ MultipleDe:
 
   udiv  %i0, %i1, %i2
   umul  %i2, %i1, %i3
-
-  /* DEBUG */
-  !set   debugmultiple1, %o0
-  !mov   %i0, %o1
-  !mov   %i1, %o2
-  !mov   %i2, %o3
-  !call  printf
-  !nop
-
-  !set   debugmultiple2, %o0
-  !mov   %i2, %o1
-  !mov   %i1, %o2
-  !mov   %i3, %o3
-  !call  printf
-  !nop
-  /* END DEBUG */
 
   cmp   %i0, %i3        ! Comparer le nombre initial et le nombre divisé puis multiplié par le même nombre
   be    MultipleDe04    ! C'est un multiple
@@ -570,15 +515,12 @@ SudokuFin:
   lecturecons:       .asciz  "%d"
   validligne1:       .asciz  "Validation des lignes du Sudoku\n"
   validligne2:       .asciz  " - Validation de la ligne #%d... "
-  validation1:       .asciz  "Validation entre %d[%d] et %d[%d]...\n"
   validcolon1:       .asciz  "Validation des colonnes du Sudoku\n"
   validcolon2:       .asciz  " - Validation de la colonne #%d... "
   validbloc1:        .asciz  "Validation des blocs du Sudoku\n"
   validbloc2:        .asciz  " - Validation du bloc #%d... "
   resvalide:         .asciz  "Valide !\n"
   resinvalide:       .asciz  "Invalide !\n"
-  debugmultiple1:    .asciz  "## %d / %d = %d +-+ "
-  debugmultiple2:    .asciz  "%d * %d = %d\n"
 
 /* Espace mémoire */
 
