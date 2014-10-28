@@ -3,7 +3,7 @@
   IFT209, Devoir 3
 */
 
-.global Main 		!Point d entrée, début du programme
+.global Main 		!Point d'entrée, début du programme
 
 .section ".text"
 
@@ -345,24 +345,24 @@ ValiderBloc00:
   call  printf
   nop
 
-  mov   0, %l0          ! Y
+  mov   0, %l0              ! Y
 
 ValiderBloc02:
-  cmp   %l0, 3          ! Après avoir testé tous les blocs, on quitte le programme
+  cmp   %l0, 3              ! Après avoir testé tous les blocs, on quitte le programme
   be    SudokuFin
   nop
  
-  mov   0, %l1          ! X
-  ba    ValiderBloc04            ! On valide les blocs sur la rangée l1
+  mov   0, %l1              ! X
+  ba    ValiderBloc04       ! On valide les blocs sur la rangée l1
   nop
 
 ValiderBloc03:
-  inc   %l0             ! On passe à la rangée de bloc suivante
+  inc   %l0                 ! On passe à la rangée de bloc suivante
   ba    ValiderBloc02
   nop
 
 ValiderBloc04:
-  cmp   %l1, 3          ! Si on a testé les 3 blocs sur la rangée, on passe à la prochaine
+  cmp   %l1, 3              ! Si on a testé les 3 blocs sur la rangée, on passe à la prochaine
   be    ValiderBloc03
   nop
 
@@ -372,73 +372,73 @@ ValiderBloc04:
   call  printf
   nop
 
-  umul  %l1, 3,  %o0    ! Calculer l'indice du premier element du bloc dans le vecteur
+  umul  %l1, 3,  %o0        ! Calculer l'indice du premier element du bloc dans le vecteur
   umul  %l0, 27, %o1
-  add   %o0, %o1, %o2   ! Index calculé
+  add   %o0, %o1, %o2       ! Index calculé
   set   vecteur, %o3
-  call  ValiderBloc10            ! Valider le bloc commençant a cet indice
+  call  ValiderBloc10       ! Valider le bloc commençant a cet indice
   nop
 
-  inc   %l1             ! On passe au bloc suivant sur la même rangée
+  inc   %l1                 ! On passe au bloc suivant sur la même rangée
   ba    ValiderBloc04
   nop
 
 ValiderBloc10:
-  save  %sp, -96, %sp   ! On concerve les registres. L'index du début va se trouver dans i2
+  save  %sp, -96, %sp       ! On concerve les registres. L'index du début va se trouver dans i2
   mov   0, %l0
   
 ValiderBloc11:
   cmp   %l0, 21
-  be    ValiderBloc20            ! Restore
+  be    ValiderBloc20       ! Restore
   nop
 
-  mov   %l0, %o0        ! Si le nombre est un multiple de 3, on change de ligne dans le Sudoku
+  mov   %l0, %o0            ! Si le nombre est un multiple de 3, on change de ligne dans le Sudoku
   mov   3, %o1
   call  MultipleDe
   nop
 
-  cmp   %o0, 1          ! Puisque c'est un multiple de 3, on doit changer de ligne
+  cmp   %o0, 1              ! Puisque c'est un multiple de 3, on doit changer de ligne
   be    ValiderBloc13
   nop
 
-  ba    ValiderBloc14            ! Tester le reste du bloc avec le chiffre
+  ba    ValiderBloc14       ! Tester le reste du bloc avec le chiffre
   nop
 
 ValiderBloc12:
-  inc   %l0             ! Tester le prochain nombre courant
+  inc   %l0                 ! Tester le prochain nombre courant
   ba    ValiderBloc11
   nop
 
 ValiderBloc13:
-  add   %l0, 6, %l0     ! Changer de ligne
+  add   %l0, 6, %l0         ! Changer de ligne
 
 ValiderBloc14:
-  add   %i2, %l0, %l5   ! Index du chiffre qu'on veut aller chercher
-  ldub  [%i3+%l5], %l3  ! Charger le chiffre courant dans l3
-  add   %l0, 1, %l1     ! Chiffre testeur
+  add   %i2, %l0, %l5       ! Index du chiffre qu'on veut aller chercher
+  ldub  [%i3+%l5], %l3      ! Charger le chiffre courant dans l3
+  add   %l0, 1, %l1         ! Chiffre testeur
   
 ValiderBloc15:
   cmp   %l1, 21
   be   ValiderBloc12
   nop
 
-  mov   %l1, %o0        ! Si le nombre est un multiple de 3, on change de ligne dans le Sudoku
+  mov   %l1, %o0            ! Si le nombre est un multiple de 3, on change de ligne dans le Sudoku
   mov   3, %o1
   call  MultipleDe
   nop
 
-  cmp   %o0, 1          ! Puisque c'est un multiple de 3, on doit changer de ligne
+  cmp   %o0, 1              ! Puisque c'est un multiple de 3, on doit changer de ligne
   bne   ValiderBloc17
   nop
 
 ValiderBloc16:
-  add   %l1, 6, %l1     ! Changer de ligne
+  add   %l1, 6, %l1         ! Changer de ligne
 
 ValiderBloc17:
-  add   %i2, %l1, %l5   ! Index du chiffre qu'on veut aller chercher
-  ldub  [%i3+%l5], %l4  ! Charger le chiffre a tester dans l4
+  add   %i2, %l1, %l5       ! Index du chiffre qu'on veut aller chercher
+  ldub  [%i3+%l5], %l4      ! Charger le chiffre a tester dans l4
 
-  cmp   %l3, %l4        ! S'assurer que les 2 chiffres sont différents
+  cmp   %l3, %l4            ! S'assurer que les 2 chiffres sont différents
   bne   ValiderBloc19
   nop
 
@@ -451,7 +451,7 @@ ValiderBloc18:
   nop
 
 ValiderBloc19:
-  inc   %l1             ! Tester le nombre courant avec un autre chiffre dans le bloc
+  inc   %l1                 ! Tester le nombre courant avec un autre chiffre dans le bloc
   ba    ValiderBloc15
   nop
 
