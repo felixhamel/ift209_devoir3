@@ -76,7 +76,7 @@ AfficherSudoku00:
   inc   %l2
 
   cmp   %l2, 9
-  bg    ValiderLignes       ! Lancer la validation du Sudoku
+  bg    ValiderLignes00     ! Lancer la validation du Sudoku
   nop
 
   ba  AfficherSudoku04      ! Afficher une ligne du Sudoku avec des chiffres
@@ -154,7 +154,7 @@ AfficherSudoku10:
 */
 
 /* Valider le sudoku sur les 9 lignes */
-ValiderLignes:
+ValiderLignes00:
   set   vecteur, %l0        ! Pointeur sur la ligne courante
   mov   0, %l1              ! %l1 va servir pour savoir on est rendu sur quelle ligne
 
@@ -164,62 +164,105 @@ ValiderLignes:
   nop
   /* end Aff */
 
-  ba    ValiderLignes00     ! Lancer la validation des lignes
+  ba    ValiderLignes02     ! Lancer la validation des lignes
   nop
   
 
 /* Validation de la ligne courante */
-ValiderLignes00:
-  mov   0, %l2        ! %l2 va servir pour savoir on est rendu sur quel chiffre
-
-  /* start Aff */
-  set   validligne2, %o0
+ValiderLignes02:
+  set   validligne2, %o0        ! Afficher qu'on valider la ligne courante
   mov   %l1, %o1
   call  printf
   nop
-  /* end Aff */
 
-  ba    ValiderLignes02     ! Lancer la validation de la ligne
-  nop
-  
+  mov   0, %l2                  ! Compteur du nombre courant sur la ligne
+  mov   1, %l3                  ! Compteur du nombre a tester avec le nombre courant sur la ligne
 
-/* Lancer la validation pour le chiffre à la position de %l0 jusqu'a ce que le 9e chiffre de la ligne soit testé */
-ValiderLignes02:
-  add   %l1, 1, %l2     ! On se sert de l2 pour savoir le chiffre avec lequel on compare le chiffre   
-  
-  ldub  [%l0], %l3      ! Charger le nombre courant dans l3
-
-  cmp   %l3, 0          ! Si le nombre courant est <= 0, la ligne est invalide
-  ble   ValiderLigne06
+  ba    ValiderLignes04         ! Lancer la validation de la ligne
   nop
 
-  cmp   %l3, 10
-  bge   ValiderLigne06  ! Si le chiffre courant est >= 10, la ligne est invalide
+ValiderLignes03:
+  inc   %l1                     ! Ligne suivante
+  add   %l0, 9, %l0             ! Déplacer le pointeur du Sudoku sur la prochaine ligne
+
+  cmp   %l1, 9                  ! Si on a fait le tour du Sudoku, on passe au mode de validation suivant
+  be    ValiderColonnes00
   nop
 
-  ! S'assurer que le nombre est plus grand de 0 et plus petit de 10
-  
+  ba    ValiderLignes02
+  nop
 
-/* Valider tout les nombres en partant de %l2 en allant jusqu'au 9e chiffre */
+
 ValiderLignes04:
+  ldub  [%l0+%l2], %l4          ! Charger le nombre courant en mémoire
+    
+  cmp   %l4, 0                  ! Le chiffre doit être entre 1 et 9
+  ble   LigneInvalide
+  nop
+
+  cmp   %l4, 10
+  bge   LigneInvalide
+  nop
+
+  ba    ValiderLignes06         ! Lancer la validation du nombre courant sur la ligne
   nop
 
 
-/* Erreur dans la ligne */
+ValiderLignes05:
+  inc   %l2                     ! Passer au nombre suivant pour la validation
+  add   %l2, 1, %l3             ! Le nombre a tester est toujours le nombre après le nombre courant (au début de la validation du nombre courant)
+
+  cmp   %l2, 9                  ! Continuer a valider la ligne si nombre courant n'est pas le dernier
+  bl    ValiderLignes04
+  nop
+
+  set   resvalide, %o0      ! Affichage d'un message disant que la ligne est valide
+  call  printf
+  nop
+
+  ba    ValiderLignes03
+  nop
+
+
 ValiderLignes06:
-  set   validligneinc, %o0      ! Afficher que la ligne est invalide comme résultat de la validation
-  call  printf
-  nop  
+  cmp   %l2, 8
+  bge   ValiderLignes05
+  nop
+ 
+  ldub  [%l0+%l3], %l5          ! Charger le nombre a tester dans le registre l5
+  
+  !set   validligne3, %o0        ! Debug INFOS
+  !mov   %l2, %o1
+  !mov   %l4, %o2
+  !mov   %l3, %o3
+  !mov   %l5, %o4
+  !call  printf
+  !nop
 
-  call  exit                    ! Et on sort du programme !
+  cmp   %l4, %l5                ! Comparer le nombre courant avec le nombre a tester pour s'assurer qu'ils ne sont pas identique
+  be    LigneInvalide
   nop
 
-ValiderLignes08:
-  set   validlignecor, %o0
+  inc   %l3                     ! Tester le nombre suivant
+
+  cmp   %l3, 9                  ! S'il nous reste des chiffre a tester, on les tests
+  bl    ValiderLignes06
+  nop
+  
+  ba    ValiderLignes05
+  nop
+
+
+LigneInvalide:
+  set   redinvalide, %o0      ! Affichage d'un message disant que la ligne est invalide
   call  printf
   nop
 
-  ba    ValiderLignes00
+  call  exit                    ! On quitte le programme
+  nop
+
+ValiderColonnes00:
+  call  exit
   nop
 
 /* 
@@ -235,10 +278,10 @@ ValiderLignes08:
   sautligne:         .asciz  "\n"
   lecturecons:       .asciz  "%d"
   validligne1:       .asciz  "Validation des lignes du Sudoku\n"
-  validligne2:       .asciz  "Ligne #%d..."
-  validligne3:       .asciz  "Ligne #%d, validation entre %d[%d] et %d[%d]..."
-  validlignecor:     .asciz  "Valide !\n"
-  validligneinc:     .asciz  "Invalide !\n"
+  validligne2:       .asciz  " - Validation de la ligne #%d... "
+  validligne3:       .asciz  "Validation entre %d[%d] et %d[%d]...\n"
+  resvalide:         .asciz  "Valide !\n"
+  redinvalide:       .asciz  "Invalide !\n"
 
 /* Espace mémoire */
 
@@ -250,6 +293,6 @@ ValiderLignes08:
 .section ".data"
 
   lecture:  .byte   0   ! Espace pour la lecture du chiffre en entrée
-  vecteur:  .byte   8,3,2,5,9,1,6,7,4,4,9,6,3,8,7,2,5,1,5,7,1,2,6,4,9,8,3,1,8,5,7,4,6,3,9,2,2,6,7,9,5,3,4,1,8,9,4,3,8,1,2,7,6,5,7,1,4,6,3,8,5,2,9,3,2,9,1,7,5,8,4,6,6,5,8,4,2,9,1,3,7,7
-
+  vecteur:  .byte   8,3,2,5,9,1,6,7,4,4,9,6,3,8,7,2,5,1,5,7,1,2,6,4,9,8,3,1,8,5,7,4,6,3,9,2,2,6,7,9,5,3,4,8,1,9,4,3,8,1,2,7,6,5,7,1,4,6,3,8,5,2,9,3,2,9,1,7,5,8,4,6,6,5,8,4,2,9,1,3,7,7
+!3
 
