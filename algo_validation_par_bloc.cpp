@@ -7,7 +7,7 @@ void valider_bloc(int index) {
     if(i % 3 == 0 && i > 0) { i += 6;  }
     for(int j = i+1; j < 21; ++j) {
       if(j % 3 == 0 && j > 0) { j += 6; }
-      printf("Vérification de i=%d, j=%d\n", index+i, index+j);
+      printf("Vérifier i=%d, j=%d\n", index+i, index+j);
       if(bloc[index+i] == bloc[index+j]) {
          printf("Les blocs %d[%d] et %d[%d] sont identique.\n", index+i, bloc[index+i], index+j, bloc[index+j]);
       }

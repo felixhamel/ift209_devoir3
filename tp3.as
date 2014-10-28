@@ -14,8 +14,8 @@ Main:
   mov   0, %l1 ! Initialiser l1 à 0 pour s en servir dans Sudoku00
 
   !ba    Sudoku00
-  ba   AfficherSudoku
-  nop
+  !ba   AfficherSudoku
+  !nop
 
 /*
     Partie 1 : Lecture du Sudoku
@@ -29,27 +29,21 @@ Sudoku00:
   call  scanf
   nop
 
-  ldub    [%o1], %l2       ! Aller lire le chiffre donné
+  set   lecture, %l7
+  ld    [%l7], %l2       ! Aller lire le chiffre donné
   
   /* start DEBUG */
-  set   afficherchiffre, %o0
-  mov   %l2, %o1
-  call  printf
-  nop
+  !set   afficherchiffre, %o0
+  !mov   %l2, %o1
+  !call  printf
+  !nop
   /* end DEBUG */
-
+  
   stb   %l2, [%l0+%l1]   ! Placer le chiffre dans le vecteur
 
   cmp   %l1, 80          ! Véfifier si nous avons tout nos chiffres ou on doit continuer
   bl    Sudoku00         ! Continuer a recevoir des chiffres
   inc   %l1
-
-  ba AfficherSudoku      ! Afficher le Sudoku
-  nop
-
-
-ValiderDiagonnales:
-  nop
 
 /*
     Partie 2 : Affichage du Sudoku
@@ -59,9 +53,6 @@ ValiderDiagonnales:
 AfficherSudoku:
   mov   3, %l1      ! Compteur de ligne qui se reset a chaque 3 lignes
   mov   0, %l2      ! Compteur de ligne qui se reset pas a chaque 3 lignes
-  
-  ba    AfficherSudoku00
-  nop
 
 /* Afficher le Sudoku */
 AfficherSudoku00:
@@ -105,8 +96,6 @@ AfficherSudoku04:
   bl    AfficherSudoku10        ! Afficher le chiffre courant
   nop
 
-  retl  ! Retour à l'affichage des autres lignes
-
 /* Afficher la barre horizontale */
 AfficherSudoku06:
   set   barrehorizo, %o0
@@ -148,30 +137,18 @@ AfficherSudoku10:
 
 /* Valider le sudoku sur les 9 lignes */
 ValiderLignes00:
-  set   vecteur, %l0        ! Pointeur sur la ligne courante
-  mov   0, %l1              ! %l1 va servir pour savoir on est rendu sur quelle ligne
-
-  set   validligne1, %o0
-  call  printf
-  nop
-
-  ba    ValiderLignes02     ! Lancer la validation des lignes
-  nop
-  
+  set   vecteur, %l0            ! Pointeur sur la ligne courante
+  mov   0, %l1                  ! %l1 va servir pour savoir on est rendu sur quelle ligne
 
 /* Validation de la ligne courante */
 ValiderLignes02:
-  set   validligne2, %o0        ! Afficher qu'on valide la ligne courante
-  mov   %l1, %o1
-  call  printf
-  nop
-
   mov   0, %l2                  ! Compteur du chiffre courant sur la ligne
   mov   1, %l3                  ! Compteur du chiffre a tester avec le chiffre courant sur la ligne
 
   ba    ValiderLignes06         ! Lancer la validation de la ligne
   nop
 
+/* Changer de ligne */
 ValiderLignes04:
   inc   %l1                     ! Ligne suivante
   add   %l0, 9, %l0             ! Déplacer le pointeur du Sudoku sur la prochaine ligne
@@ -180,25 +157,25 @@ ValiderLignes04:
   be    ValiderColonnes00
   nop
 
-  ba    ValiderLignes02
+  ba    ValiderLignes02         ! Passer a la ligne suivante
   nop
 
-
+/* Validation du chiffre courant */
 ValiderLignes06:
   ldub  [%l0+%l2], %l4          ! Charger le chiffre courant en mémoire
     
   cmp   %l4, 0                  ! Le chiffre doit être entre 1 et 9
-  ble   LigneInvalide
+  ble   ValiderLignes12
   nop
 
   cmp   %l4, 10
-  bge   LigneInvalide
+  bge   ValiderLignes12
   nop
 
   ba    ValiderLignes10         ! Lancer la validation du chiffre courant sur la ligne
   nop
 
-
+/* Valider tout les chiffres en partant du premier au dernier et ne valider que le dernier chiffre sans testeur. */
 ValiderLignes08:
   inc   %l2                     ! Passer au chiffre suivant pour la validation
   add   %l2, 1, %l3             ! Le chiffre a tester est toujours le chiffre après le chiffre courant (au début de la validation du chiffre courant)
@@ -207,23 +184,29 @@ ValiderLignes08:
   bl    ValiderLignes06
   nop
 
-  set   resvalide, %o0      ! Affichage d'un message disant que la ligne est valide
-  call  printf
-  nop
-
   ba    ValiderLignes04
   nop
 
-
+/* Valider toute la ligne a partir du chiffre courant avec le reste des chiffres de la ligne */
 ValiderLignes10:
-  cmp   %l2, 8
+  cmp   %l2, 8                  ! Si on a atteint la fin de la ligne, on passe a la suivante
   bge   ValiderLignes08
   nop
  
   ldub  [%l0+%l3], %l5          ! Charger le chiffre a tester dans le registre l5
 
+  /* DEBUG */
+  !set   debug, %o0
+  !mov   %l2, %o1
+  !mov   %l4, %o2
+  !mov   %l3, %o3
+  !mov   %l5, %o4
+  !call  printf
+  !nop  
+  /* END DEBUG */
+
   cmp   %l4, %l5                ! Comparer le chiffre courant avec le chiffre a tester pour s'assurer qu'ils ne sont pas identique
-  be    LigneInvalide
+  be    ValiderLignes12
   nop
 
   inc   %l3                     ! Tester le chiffre suivant
@@ -235,13 +218,14 @@ ValiderLignes10:
   ba    ValiderLignes08
   nop
 
-
-LigneInvalide:
-  set   resinvalide, %o0        ! Affichage d'un message disant que la ligne est invalide
+/* Message indiquant qu'on a trouvé une erreur */
+ValiderLignes12:
+  set   validationrangee, %o0  ! Indiquer qu'on a trouvé une erreur dans la ligne courante
+  add   %l1, 1, %o1
   call  printf
   nop
 
-  call  exit                    ! On quitte le programme
+  call  SudokuFin
   nop
 
 /*
@@ -251,24 +235,17 @@ LigneInvalide:
 
 ValiderColonnes00:
   set   vecteur, %l0        ! Pointeur sur la colonnes courante
-  mov   0, %l1              ! %l1 va servir pour savoir on est rendu sur quelle ligne
+  mov   0, %l1              ! %l1 va servir pour savoir on est rendu sur quelle colonne
 
-  set   validcolon1, %o0
-  call  printf
-  nop
-
+/* Initialisation de la validation par colonnes */
 ValiderColonnes02:
-  set   validcolon2, %o0        ! Afficher qu'on valider la colonne courante
-  mov   %l1, %o1
-  call  printf
-  nop
-
   mov   0, %l2                    ! Compteur du chiffre courant sur la colonne
   mov   1, %l3                    ! Compteur du chiffre a tester avec le chiffre courant sur la colonne
 
   ba    ValiderColonnes06         ! Lancer la validation de la colonne
   nop
 
+/* Changer de colonne */
 ValiderColonnes04:
   inc   %l1                       ! colonne suivante
 
@@ -282,23 +259,23 @@ ValiderColonnes04:
   ba    ValiderColonnes02
   nop
 
-
+/* Validation du chiffre courant */
 ValiderColonnes06:
   umul  %l2, 9, %l6
   ldub  [%l0+%l6], %l4          ! Charger le chiffre courant en mémoire
     
   cmp   %l4, 0                  ! Le chiffre doit être entre 1 et 9
-  ble   LigneInvalide
+  ble   ValiderColonnes12
   nop
 
   cmp   %l4, 10
-  bge   LigneInvalide
+  bge   ValiderColonnes12
   nop
 
-  ba    ValiderColonnes10         ! Lancer la validation du chiffre courant sur la colonne
+  ba    ValiderColonnes10       ! Lancer la validation du chiffre courant sur la colonne
   nop
 
-
+/* Valider tout les chiffres en partant du premier au dernier et ne valider que le dernier chiffre sans testeur. */
 ValiderColonnes08:
   inc   %l2                     ! Passer au chiffre suivant pour la validation
   add   %l2, 1, %l3             ! Le chiffre a tester est toujours le chiffre après le chiffre courant (au début de la validation du chiffre courant)
@@ -307,24 +284,20 @@ ValiderColonnes08:
   bl    ValiderColonnes06
   nop
 
-  set   resvalide, %o0      ! Affichage d'un message disant que la colonne est valide
-  call  printf
-  nop
-
   ba    ValiderColonnes04
   nop
 
-
+/* Valider toute la colonne a partir du chiffre courant avec le reste des chiffres de la colonne */
 ValiderColonnes10:
-  cmp   %l2, 8
+  cmp   %l2, 8                  ! Si on a atteint la fin de la colonne, on passe a la prochaine
   bge   ValiderColonnes08
   nop
  
-  umul  %l3, 9, %l6
+  umul  %l3, 9, %l6             ! Puisqu'on y va par colonnes, on doit y aller ligne par ligne
   ldub  [%l0+%l6], %l5          ! Charger le chiffre a tester dans le registre l5
 
   cmp   %l4, %l5                ! Comparer le chiffre courant avec le chiffre a tester pour s'assurer qu'ils ne sont pas identique
-  be    LigneInvalide
+  be    ValiderColonnes12
   nop
 
   inc   %l3                     ! Tester le chiffre suivant
@@ -336,15 +309,22 @@ ValiderColonnes10:
   ba    ValiderColonnes08
   nop
 
+/* Message indiquant qu'on a trouvé une erreur */
+ValiderColonnes12:
+  set   validationcolonne, %o0  ! Indiquer qu'on a trouvé une erreur dans la colonne courante
+  add   %l1, 1, %o1
+  call  printf
+  nop
+
+  call  SudokuFin
+  nop
+  
+
 /*
     Partie 5 : Validation par bloc
     ---------------------------------------------------
 */
 ValiderBloc00:
-  set   validbloc1, %o0
-  call  printf
-  nop
-
   mov   0, %l0              ! Y
 
 ValiderBloc02:
@@ -366,16 +346,13 @@ ValiderBloc04:
   be    ValiderBloc03
   nop
 
-  set   validbloc2, %o0
-  umul  %l0, 3, %o1
-  add   %l1, %o1, %o1
-  call  printf
-  nop
-
   umul  %l1, 3,  %o0        ! Calculer l'indice du premier element du bloc dans le vecteur
   umul  %l0, 27, %o1
   add   %o0, %o1, %o2       ! Index calculé
-  set   vecteur, %o3
+
+  umul  %l0, 3, %o3         ! # du bloc
+
+  add   %l1, %o4, %o4
   call  ValiderBloc10       ! Valider le bloc commençant a cet indice
   nop
 
@@ -386,6 +363,7 @@ ValiderBloc04:
 ValiderBloc10:
   save  %sp, -96, %sp       ! On concerve les registres. L'index du début va se trouver dans i2
   mov   0, %l0
+  set   vecteur, %l6
   
 ValiderBloc11:
   cmp   %l0, 21
@@ -414,7 +392,7 @@ ValiderBloc13:
 
 ValiderBloc14:
   add   %i2, %l0, %l5       ! Index du chiffre qu'on veut aller chercher
-  ldub  [%i3+%l5], %l3      ! Charger le chiffre courant dans l3
+  ldub  [%l6+%l5], %l3      ! Charger le chiffre courant dans l3
   add   %l0, 1, %l1         ! Chiffre testeur
   
 ValiderBloc15:
@@ -436,18 +414,19 @@ ValiderBloc16:
 
 ValiderBloc17:
   add   %i2, %l1, %l5       ! Index du chiffre qu'on veut aller chercher
-  ldub  [%i3+%l5], %l4      ! Charger le chiffre a tester dans l4
+  ldub  [%l6+%l5], %l4      ! Charger le chiffre a tester dans l4
 
   cmp   %l3, %l4            ! S'assurer que les 2 chiffres sont différents
   bne   ValiderBloc19
   nop
 
 ValiderBloc18:
-  set   resinvalide, %o0    ! Afficher que le bloc n'est pas valide
+  set   validationbloc, %o0 ! Indiquer qu'on a trouvé une erreur au bloc courant
+  add   %i3, 1, %o1
   call  printf
   nop
 
-  ba    SudokuFin           ! Fin du programme
+  ba    SudokuFin
   nop
 
 ValiderBloc19:
@@ -455,15 +434,16 @@ ValiderBloc19:
   ba    ValiderBloc15
   nop
 
-ValiderBloc20:
-  set   resvalide, %o0
-  call  printf
-  nop
- 
-  ret                   ! Passer au bloc suivant
+ValiderBloc20: 
+  ret                       ! Passer au bloc suivant
   restore
 
+ValiderBloc21:
+ 
+
 /*
+    MultipleDe:
+    ---------------------
     Vérifier si le nombre donné dans o0 est un multiple de o1.
     Résultat : o0 -> 0 = n'est pas un multiple, 1 = c'est un multiple
 */
@@ -501,35 +481,21 @@ SudokuFin:
   call  exit
   nop
 
-/* 
-    Variables
-    ---------------------------------------------------
-*/
-
+/* Variables */
 .section ".rodata"
-
   lignepleine:       .asciz  "|---------|---------|---------|\n"
   afficherchiffre:   .asciz  " %d "
   barrehorizo:       .asciz  "|"
   sautligne:         .asciz  "\n"
-  lecturecons:       .asciz  "%d"
-  validligne1:       .asciz  "Validation des lignes du Sudoku\n"
-  validligne2:       .asciz  " - Validation de la ligne #%d... "
-  validcolon1:       .asciz  "Validation des colonnes du Sudoku\n"
-  validcolon2:       .asciz  " - Validation de la colonne #%d... "
-  validbloc1:        .asciz  "Validation des blocs du Sudoku\n"
-  validbloc2:        .asciz  " - Validation du bloc #%d... "
-  resvalide:         .asciz  "Valide !\n"
-  resinvalide:       .asciz  "Invalide !\n"
+  lecturecons:       .asciz  "\n%d"
+  validationrangee:  .asciz  "Le sudoku contient une erreur dans la rangée %d\n"
+  validationcolonne: .asciz  "Le sudoku contient une erreur dans la colonne %d\n"
+  validationbloc:    .asciz  "Le sudoku contient une erreur dans le bloc %d\n"
 
-/* Espace mémoire */
-
+/* Espaces mémoire */
 .section ".bss"
-
-            .align 	1   ! Octet
-  !vecteur: .skip	81  ! 81 espaces mémoire pour le vecteur du Sudoku
+           .align 	1   ! Octet
+  vecteur: .skip	81  ! 81 espaces mémoire pour le vecteur du Sudoku
 
 .section ".data"
-
-  lecture:  .byte   0   ! Espace pour la lecture du chiffre en entrée
-  vecteur:  .byte   8,3,2,5,9,1,6,7,4,4,9,6,3,8,7,2,5,1,5,7,1,2,6,4,9,8,3,1,8,5,7,4,6,3,9,2,2,6,7,9,5,3,4,1,8,9,4,3,8,1,2,7,6,5,7,1,4,6,3,8,5,2,9,3,2,9,1,7,5,8,4,6,6,5,8,4,2,9,1,3,7
+  lecture:  .word   0 ! Espace pour la lecture du chiffre en entrée
