@@ -254,7 +254,7 @@ ValiderLignes10:
 
 
 LigneInvalide:
-  set   redinvalide, %o0        ! Affichage d'un message disant que la ligne est invalide
+  set   resinvalide, %o0        ! Affichage d'un message disant que la ligne est invalide
   call  printf
   nop
 
@@ -276,9 +276,6 @@ ValiderColonnes00:
   nop
   /* end Aff */
 
-  ba    ValiderColonnes02     ! Lancer la validation des colonnes
-  nop
-
 ValiderColonnes02:
   set   validcolon2, %o0        ! Afficher qu'on valider la colonne courante
   mov   %l1, %o1
@@ -298,7 +295,7 @@ ValiderColonnes04:
   add   %l0, %l1, %l0
 
   cmp   %l1, 9                    ! Si on a fait le tour du Sudoku, on passe au mode de validation suivant
-  be    FinProgramme
+  be    VB00
   nop
 
   ba    ValiderColonnes02
@@ -370,11 +367,192 @@ ValiderColonnes10:
     Partie 5 : Validation par bloc
     ---------------------------------------------------
 */
-!TODO
+VB00:
+  set   validbloc1, %o0
+  call  printf
+  nop
 
+  mov   0, %l0          ! Y
 
+VB02:
+  cmp   %l0, 3          ! Après avoir testé tous les blocs, on quitte le programme
+  be    SudokuFin
+  nop
+ 
+  mov   0, %l1          ! X
+  ba    VB04            ! On valide les blocs sur la rangée l1
+  nop
 
-FinProgramme:
+VB03:
+  inc   %l0             ! On passe à la rangée de bloc suivante
+  ba    VB02
+  nop
+
+VB04:
+  cmp   %l1, 3          ! Si on a testé les 3 blocs sur la rangée, on passe à la prochaine
+  be    VB03
+  nop
+
+  /* start AFF */
+  set   validbloc2, %o0
+  umul  %l0, 3, %o1
+  add   %l1, %o1, %o1
+  call  printf
+  nop
+  /* end AFF */
+
+  umul  %l1, 3,  %o0    ! Calculer l'indice du premier element du bloc dans le vecteur
+  umul  %l0, 27, %o1
+  add   %o0, %o1, %o2   ! Index calculé
+  set   vecteur, %o3
+  call  VB10            ! Valider le bloc commençant a cet indice
+  nop
+
+  inc   %l1             ! On passe au bloc suivant sur la même rangée
+  ba    VB04
+  nop
+
+VB10:
+  save  %sp, -96, %sp   ! On concerve les registres. L'index du début va se trouver dans i2
+  mov   0, %l0
+  
+VB11:
+  cmp   %l0, 21
+  be    VB20            ! Restore
+  nop
+
+  mov   %l0, %o0        ! Si le nombre est un multiple de 3, on change de ligne dans le Sudoku
+  mov   3, %o1
+  call  MultipleDe
+  nop
+
+  cmp   %o0, 1          ! Puisque c'est un multiple de 3, on doit changer de ligne
+  be    VB13
+  nop
+
+  ba    VB14            ! Tester le reste du bloc avec le chiffre
+  nop
+
+VB12:
+  inc   %l0             ! Tester le prochain nombre courant
+  ba    VB11
+  nop
+
+VB13:
+  add   %l0, 6, %l0     ! Changer de ligne
+
+VB14:
+  add   %i2, %l0, %l5   ! Index du chiffre qu'on veut aller chercher
+  ldub  [%i3+%l5], %l3  ! Charger le chiffre courant dans l3
+  add   %l0, 1, %l1     ! Chiffre testeur
+  
+VB15:
+  cmp   %l1, 21
+  be   VB12
+  nop
+
+  mov   %l1, %o0        ! Si le nombre est un multiple de 3, on change de ligne dans le Sudoku
+  mov   3, %o1
+  call  MultipleDe
+  nop
+
+  cmp   %o0, 1          ! Puisque c'est un multiple de 3, on doit changer de ligne
+  bne   VB17
+  nop
+
+VB16:
+  add   %l1, 6, %l1     ! Changer de ligne
+
+VB17:
+  add   %i2, %l1, %l5   ! Index du chiffre qu'on veut aller chercher
+  ldub  [%i3+%l5], %l4  ! Charger le chiffre a tester dans l4
+  
+  /* start AFF */
+  !set   validation1, %o0
+  !mov   %l0, %o1
+  !mov   %l3, %o2
+  !mov   %l1, %o3
+  !mov   %l4, %o4
+  !call  printf
+  !nop
+  /* end AFF */
+
+  cmp   %l3, %l4        ! S'assurer que les 2 chiffres sont différents
+  bne   VB19
+  nop
+
+VB18:
+  set   resinvalide, %o0    ! Afficher que le bloc n'est pas valide
+  call  printf
+  nop
+
+  ba    SudokuFin           ! Fin du programme
+  nop
+
+VB19:
+  inc   %l1             ! Tester le nombre courant avec un autre chiffre dans le bloc
+  ba    VB15
+  nop
+
+VB20:
+  set   resvalide, %o0
+  call  printf
+  nop
+ 
+  ret                   ! Passer au bloc suivant
+  restore
+
+/*
+    Vérifier si le nombre donné dans o0 est un multiple de o1.
+    Résultat : o0 -> 0 = n'est pas un multiple, 1 = c'est un multiple
+*/
+MultipleDe:
+  save  %sp, -104, %sp  ! Concerver les registres.
+  mov   0, %y			! initialise %y pour la division
+
+  cmp   %i0, 0          ! Si le nombre est 0, il ne peut être un multiple
+  be    MultipleDe02
+  nop
+
+  udiv  %i0, %i1, %i2
+  umul  %i2, %i1, %i3
+
+  /* DEBUG */
+  !set   debugmultiple1, %o0
+  !mov   %i0, %o1
+  !mov   %i1, %o2
+  !mov   %i2, %o3
+  !call  printf
+  !nop
+
+  !set   debugmultiple2, %o0
+  !mov   %i2, %o1
+  !mov   %i1, %o2
+  !mov   %i3, %o3
+  !call  printf
+  !nop
+  /* END DEBUG */
+
+  cmp   %i0, %i3        ! Comparer le nombre initial et le nombre divisé puis multiplié par le même nombre
+  be    MultipleDe04    ! C'est un multiple
+  nop
+  
+MultipleDe02:
+  mov   0, %i0          ! Ce n'est pas un multiple
+  ba    MultipleDe06
+  nop
+
+MultipleDe04:
+  mov   1, %i0          ! C'est un multiple
+
+MultipleDe06:
+  ret                   ! Retour au programme
+  restore
+
+/*
+    Fin du programme
+*/
+SudokuFin:
   call  exit
   nop
 
@@ -395,18 +573,21 @@ FinProgramme:
   validation1:       .asciz  "Validation entre %d[%d] et %d[%d]...\n"
   validcolon1:       .asciz  "Validation des colonnes du Sudoku\n"
   validcolon2:       .asciz  " - Validation de la colonne #%d... "
+  validbloc1:        .asciz  "Validation des blocs du Sudoku\n"
+  validbloc2:        .asciz  " - Validation du bloc #%d... "
   resvalide:         .asciz  "Valide !\n"
-  redinvalide:       .asciz  "Invalide !\n"
+  resinvalide:       .asciz  "Invalide !\n"
+  debugmultiple1:    .asciz  "## %d / %d = %d +-+ "
+  debugmultiple2:    .asciz  "%d * %d = %d\n"
 
 /* Espace mémoire */
 
 .section ".bss"
 
             .align 	1   ! Octet
-  !vecteur: 	.skip	81  ! 81 espaces mémoire pour le vecteur du Sudoku
+  !vecteur: .skip	81  ! 81 espaces mémoire pour le vecteur du Sudoku
 
 .section ".data"
 
   lecture:  .byte   0   ! Espace pour la lecture du chiffre en entrée
   vecteur:  .byte   8,3,2,5,9,1,6,7,4,4,9,6,3,8,7,2,5,1,5,7,1,2,6,4,9,8,3,1,8,5,7,4,6,3,9,2,2,6,7,9,5,3,4,1,8,9,4,3,8,1,2,7,6,5,7,1,4,6,3,8,5,2,9,3,2,9,1,7,5,8,4,6,6,5,8,4,2,9,1,3,7
-!3
